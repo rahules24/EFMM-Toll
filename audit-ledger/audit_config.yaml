@@ -1,0 +1,27 @@
+# Audit Ledger Configuration
+# Configuration file for the Distributed Audit Ledger
+
+service:
+  name: "efmm-audit-ledger"
+  host: "localhost"
+  port: 8004
+  log_level: "INFO"
+
+ledger:
+  node_id: "audit-node-001"
+  block_size: 10  # Number of records per block
+  block_interval: 30  # Seconds between block creation
+  sync_interval: 60  # Seconds between peer synchronization
+  peers: []  # List of peer node addresses
+  consensus_algorithm: "proof_of_authority"
+  network_timeout: 30
+
+storage:
+  blockchain_path: "./blockchain"
+  backup_interval: 3600  # Seconds between backups
+  retention_days: 365
+
+security:
+  encryption_enabled: true
+  digital_signatures_enabled: true
+  audit_verification_enabled: true

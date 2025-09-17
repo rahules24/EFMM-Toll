@@ -1,0 +1,120 @@
+# Docker Compose for EFMM-Toll System
+# Orchestrates all components of the system
+
+version: '3.8'
+
+services:
+  # RSU Edge Module
+  rsu-edge:
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile.rsu
+    container_name: efmm-rsu-edge
+    ports:
+      - "8001:8001"
+    environment:
+      - LOG_LEVEL=INFO
+      - RSU_ID=rsu-001
+    volumes:
+      - ./rsu-edge/rsu_config.yaml:/app/config.yaml
+      - rsu_data:/app/data
+    networks:
+      - efmm-network
+    restart: unless-stopped
+
+  # Vehicle OBU App
+  vehicle-obu:
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile.vehicle
+    container_name: efmm-vehicle-obu
+    ports:
+      - "8002:8002"
+    environment:
+      - LOG_LEVEL=INFO
+      - VEHICLE_ID=vehicle-001
+    volumes:
+      - ./vehicle-obu/vehicle_config.yaml:/app/config.yaml
+      - vehicle_data:/app/data
+    networks:
+      - efmm-network
+    restart: unless-stopped
+
+  # Federated Aggregator Service
+  aggregator:
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile.aggregator
+    container_name: efmm-aggregator
+    ports:
+      - "8003:8003"
+    environment:
+      - LOG_LEVEL=INFO
+      - AGGREGATOR_ID=agg-001
+    volumes:
+      - ./aggregator/aggregator_config.yaml:/app/config.yaml
+      - aggregator_data:/app/data
+      - aggregator_models:/app/models
+    networks:
+      - efmm-network
+    restart: unless-stopped
+
+  # Distributed Audit Ledger
+  audit-ledger:
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile.audit
+    container_name: efmm-audit-ledger
+    ports:
+      - "8004:8004"
+    environment:
+      - LOG_LEVEL=INFO
+      - NODE_ID=audit-node-001
+    volumes:
+      - ./audit-ledger/audit_config.yaml:/app/config.yaml
+      - audit_data:/app/data
+      - blockchain_data:/app/blockchain
+    networks:
+      - efmm-network
+    restart: unless-stopped
+
+  # Database (SQLite with volume mounting)
+  # Note: In production, consider PostgreSQL or similar
+  database:
+    image: alpine:latest
+    container_name: efmm-database
+    command: tail -f /dev/null  # Keep container running
+    volumes:
+      - database_data:/data
+    networks:
+      - efmm-network
+
+  # Monitoring and Logging
+  monitoring:
+    image: prom/prometheus:latest
+    container_name: efmm-monitoring
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployment/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - efmm-network
+    restart: unless-stopped
+
+networks:
+  efmm-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  rsu_data:
+  vehicle_data:
+  aggregator_data:
+  aggregator_models:
+  audit_data:
+  blockchain_data:
+  database_data:
+  prometheus_data:

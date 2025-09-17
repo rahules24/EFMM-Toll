@@ -1,0 +1,39 @@
+# Vehicle OBU Configuration
+
+# Vehicle Identity
+vehicle_id: "vehicle_001"
+mode: "embedded"  # embedded, mobile, simulation
+
+# V2X Communication
+v2x:
+  protocol: "DSRC"  # DSRC or C-V2X
+  channel: 178
+  tx_power: 20  # dBm
+  capabilities: ["toll_payment", "traffic_info"]
+  discovery_interval_seconds: 10
+  handshake_timeout_seconds: 30
+  pseudonym_rotation_minutes: 5
+  discovery:
+    discovery_timeout_seconds: 30
+
+# Token Management
+tokens:
+  max_tokens: 5
+  validation_timeout_seconds: 30
+
+# Crypto Wallet
+wallet:
+  initial_balance: 1000.0
+  payment_methods: ["account_balance"]
+
+# Privacy Protection
+privacy:
+  privacy_level: "high"  # low, medium, high
+  pseudonym_rotation: true
+  differential_privacy: true
+
+# Federated Learning (Optional)
+federated_learning:
+  enabled: false
+  server_url: "https://fl-aggregator.example.com"
+  privacy_budget: 1.0

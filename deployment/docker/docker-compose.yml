@@ -1,0 +1,203 @@
+# Docker Compose for EFMM-Toll System
+version: '3.8'
+
+services:
+  # RSU Edge Service
+  rsu-edge:
+    build:
+      context: ..
+      dockerfile: deployment/docker/Dockerfile.rsu
+    container_name: efmm-rsu-edge
+    ports:
+      - "8001:8001"
+    environment:
+      - EFMM_LOG_LEVEL=INFO
+      - EFMM_SERVICE_HOST=0.0.0.0
+      - EFMM_SERVICE_PORT=8001
+    volumes:
+      - rsu_data:/app/data
+      - rsu_logs:/app/logs
+      - ./config/rsu:/app/config
+    networks:
+      - efmm-network
+    depends_on:
+      - audit-ledger
+      - aggregator
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Vehicle OBU Service
+  vehicle-obu:
+    build:
+      context: ..
+      dockerfile: deployment/docker/Dockerfile.vehicle
+    container_name: efmm-vehicle-obu
+    ports:
+      - "8002:8002"
+    environment:
+      - EFMM_LOG_LEVEL=INFO
+      - EFMM_SERVICE_HOST=0.0.0.0
+      - EFMM_SERVICE_PORT=8002
+    volumes:
+      - vehicle_data:/app/data
+      - vehicle_logs:/app/logs
+      - ./config/vehicle:/app/config
+    networks:
+      - efmm-network
+    depends_on:
+      - audit-ledger
+      - rsu-edge
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8002/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Federated Aggregator Service
+  aggregator:
+    build:
+      context: ..
+      dockerfile: deployment/docker/Dockerfile.aggregator
+    container_name: efmm-aggregator
+    ports:
+      - "8003:8003"
+    environment:
+      - EFMM_LOG_LEVEL=INFO
+      - EFMM_SERVICE_HOST=0.0.0.0
+      - EFMM_SERVICE_PORT=8003
+    volumes:
+      - aggregator_data:/app/data
+      - aggregator_logs:/app/logs
+      - aggregator_models:/app/models
+      - ./config/aggregator:/app/config
+    networks:
+      - efmm-network
+    depends_on:
+      - audit-ledger
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8003/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Audit Ledger Service
+  audit-ledger:
+    build:
+      context: ..
+      dockerfile: deployment/docker/Dockerfile.audit
+    container_name: efmm-audit-ledger
+    ports:
+      - "8004:8004"
+    environment:
+      - EFMM_LOG_LEVEL=INFO
+      - EFMM_SERVICE_HOST=0.0.0.0
+      - EFMM_SERVICE_PORT=8004
+    volumes:
+      - audit_data:/app/data
+      - audit_logs:/app/logs
+      - audit_blockchain:/app/blockchain
+      - ./config/audit:/app/config
+    networks:
+      - efmm-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8004/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: efmm-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - efmm-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # PostgreSQL for persistent data storage
+  postgres:
+    image: postgres:15-alpine
+    container_name: efmm-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=efmm_toll
+      - POSTGRES_USER=efmm_user
+      - POSTGRES_PASSWORD=efmm_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./config/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - efmm-network
+    restart: unless-stopped
+
+  # Monitoring with Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: efmm-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - efmm-network
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: efmm-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - efmm-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+# Networks
+networks:
+  efmm-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Volumes
+volumes:
+  rsu_data:
+  rsu_logs:
+  vehicle_data:
+  vehicle_logs:
+  aggregator_data:
+  aggregator_logs:
+  aggregator_models:
+  audit_data:
+  audit_logs:
+  audit_blockchain:
+  redis_data:
+  postgres_data:
+  prometheus_data:
+  grafana_data:

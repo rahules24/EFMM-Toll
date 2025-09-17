@@ -1,0 +1,176 @@
+# Kubernetes Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: efmm-toll
+  labels:
+    name: efmm-toll
+---
+# ConfigMap for shared configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: efmm-config
+  namespace: efmm-toll
+data:
+  LOG_LEVEL: "INFO"
+  REDIS_HOST: "redis-service"
+  POSTGRES_HOST: "postgres-service"
+  AUDIT_LEDGER_HOST: "audit-ledger-service"
+  AGGREGATOR_HOST: "aggregator-service"
+---
+# RSU Edge Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rsu-edge
+  namespace: efmm-toll
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rsu-edge
+  template:
+    metadata:
+      labels:
+        app: rsu-edge
+    spec:
+      containers:
+      - name: rsu-edge
+        image: efmm/rsu-edge:latest
+        ports:
+        - containerPort: 8001
+        env:
+        - name: EFMM_LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: efmm-config
+              key: LOG_LEVEL
+        - name: EFMM_SERVICE_HOST
+          value: "0.0.0.0"
+        - name: EFMM_SERVICE_PORT
+          value: "8001"
+        volumeMounts:
+        - name: rsu-data
+          mountPath: /app/data
+        - name: rsu-config
+          mountPath: /app/config
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8001
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: rsu-data
+        persistentVolumeClaim:
+          claimName: rsu-data-pvc
+      - name: rsu-config
+        configMap:
+          name: rsu-config
+---
+# RSU Edge Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: rsu-edge-service
+  namespace: efmm-toll
+spec:
+  selector:
+    app: rsu-edge
+  ports:
+  - protocol: TCP
+    port: 8001
+    targetPort: 8001
+  type: ClusterIP
+---
+# Vehicle OBU Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vehicle-obu
+  namespace: efmm-toll
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vehicle-obu
+  template:
+    metadata:
+      labels:
+        app: vehicle-obu
+    spec:
+      containers:
+      - name: vehicle-obu
+        image: efmm/vehicle-obu:latest
+        ports:
+        - containerPort: 8002
+        env:
+        - name: EFMM_LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: efmm-config
+              key: LOG_LEVEL
+        - name: EFMM_SERVICE_HOST
+          value: "0.0.0.0"
+        - name: EFMM_SERVICE_PORT
+          value: "8002"
+        volumeMounts:
+        - name: vehicle-data
+          mountPath: /app/data
+        - name: vehicle-config
+          mountPath: /app/config
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8002
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: vehicle-data
+        persistentVolumeClaim:
+          claimName: vehicle-data-pvc
+      - name: vehicle-config
+        configMap:
+          name: vehicle-config
+---
+# Vehicle OBU Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: vehicle-obu-service
+  namespace: efmm-toll
+spec:
+  selector:
+    app: vehicle-obu
+  ports:
+  - protocol: TCP
+    port: 8002
+    targetPort: 8002
+  type: ClusterIP

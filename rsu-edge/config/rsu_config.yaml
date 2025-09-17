@@ -1,0 +1,108 @@
+# RSU Edge Module Configuration
+
+# RSU Identity
+rsu_id: "rsu_001"
+mode: "production"  # production, simulation, testing
+
+# Sensor Configuration
+sensors:
+  anpr_cameras:
+    - id: "camera_lane_1"
+      device_path: "/dev/video0"
+      model_path: "models/anpr_model.pth"
+      lane_id: "lane_1"
+      resolution: [1920, 1080]
+      fps: 30
+    - id: "camera_lane_2"
+      device_path: "/dev/video1"
+      model_path: "models/anpr_model.pth"
+      lane_id: "lane_2"
+      resolution: [1920, 1080]
+      fps: 30
+  
+  rfid_readers:
+    - id: "rfid_lane_1"
+      port: "/dev/ttyUSB0"
+      frequency: 915  # MHz
+      lane_id: "lane_1"
+      power_level: 30  # dBm
+    - id: "rfid_lane_2"
+      port: "/dev/ttyUSB1"
+      frequency: 915
+      lane_id: "lane_2"
+      power_level: 30
+  
+  v2x_transceivers:
+    - id: "v2x_main"
+      channel: 178  # 5.89 GHz
+      protocol: "DSRC"  # or C-V2X
+      lane_coverage: ["lane_1", "lane_2"]
+      power_level: 23  # dBm
+
+# Multi-Modal Fusion Configuration
+fusion:
+  model:
+    modalities:
+      anpr:
+        feature_dim: 512
+      rfid:
+        feature_dim: 128
+      v2x:
+        feature_dim: 128
+    fusion:
+      feature_dim: 256
+  model_path: "models/fusion_model.pth"
+  event_timeout_seconds: 30
+  min_modalities_for_fusion: 1
+  min_collection_time_seconds: 2
+
+# Federated Learning Configuration
+federated_learning:
+  participant_id: "rsu_001"  # Will be set to rsu_id automatically
+  aggregation_server_url: "https://fl-aggregator.example.com"
+  learning_rate: 0.001
+  batch_size: 32
+  communication_interval_seconds: 300  # 5 minutes
+  training_interval_seconds: 600  # 10 minutes
+  min_training_samples: 50
+  max_buffer_size: 10000
+  min_update_interval_seconds: 900  # 15 minutes
+  use_differential_privacy: true
+  use_secure_aggregation: true
+  dp_epsilon: 1.0
+  dp_delta: 0.00001
+  supported_modalities: ["anpr", "rfid", "v2x"]
+  model_version: "1.0"
+
+# Token Orchestrator Configuration
+tokens:
+  rsu_id: "rsu_001"  # Will be set automatically
+  token_validity_seconds: 300  # 5 minutes
+  max_tokens_per_lane: 10
+  v2x:
+    handshake_timeout_seconds: 30
+  qr:
+    qr_display_timeout_seconds: 60
+    rsu_endpoint: "https://rsu-001.example.com/api/handshake"
+
+# Payment Verification Configuration
+payments:
+  zk_verification:
+    # ZK proof verification parameters
+  max_proof_age_minutes: 30
+
+# TEE Configuration
+tee:
+  tee_type: "simulation"  # sgx, trustzone, simulation
+  generate_attestations: true
+  rsu_id: "rsu_001"  # Will be set automatically
+  verifier_version: "1.0"
+
+# Audit Buffer Configuration
+audit:
+  rsu_id: "rsu_001"  # Will be set automatically
+  database_path: "data/audit/rsu_001_audit.db"
+  batch_size: 100
+  batch_interval_seconds: 300  # 5 minutes
+  cleanup_age_days: 30
+  cleanup_interval_hours: 24
