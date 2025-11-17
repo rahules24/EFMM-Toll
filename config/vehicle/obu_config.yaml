@@ -6,7 +6,7 @@ service:
   log_level: INFO
 
 v2x:
-  protocol: dsrc
+  protocol: DSRC
   v2x_interface: wlan0
   heartbeat_interval_seconds: 30
 

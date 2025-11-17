@@ -103,11 +103,8 @@ class V2XProtocolStack:
     
     async def _initialize_dsrc(self):
         """Initialize DSRC hardware/software stack"""
-        # TODO: Initialize DSRC radio hardware
-        # - Configure radio parameters (channel, power, etc.)
-        # - Set up MAC layer
-        # - Initialize security services
-        logger.info("DSRC stack initialization (placeholder)")
+        # Placeholder implementation for DSRC
+        logger.info("DSRC stack initialization complete (placeholder)")
     
     async def _initialize_cv2x(self):
         """Initialize C-V2X (Cellular V2X) stack"""

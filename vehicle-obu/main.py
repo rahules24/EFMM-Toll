@@ -13,6 +13,7 @@ import logging
 import argparse
 import yaml
 from typing import Dict, Any
+from dataclasses import asdict
 
 # Add the project root to the Python path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -68,35 +69,35 @@ class VehicleOBUService:
         logger.info("Initializing Vehicle OBU Service...")
         
         try:
-            # Initialize privacy manager first
-            self.privacy_manager = PrivacyManager(self.config.privacy)
+            # Convert PrivacyConfig to dictionary before passing to PrivacyManager
+            self.privacy_manager = PrivacyManager(asdict(self.config.privacy))
             await self.privacy_manager.initialize()
             
-            # Initialize V2X client
+            # Convert V2XConfig to dictionary before passing to V2XClient
             self.v2x_client = V2XClient(
-                config=self.config.v2x,
+                config=asdict(self.config.v2x),
                 event_queue=self.rsu_events_queue
             )
             await self.v2x_client.initialize()
             
-            # Initialize token holder
+            # Convert TokenConfig to dictionary before passing to TokenHolder
             self.token_holder = TokenHolder(
-                config=self.config.tokens,
+                config=asdict(self.config.tokens),
                 privacy_manager=self.privacy_manager
             )
             await self.token_holder.initialize()
             
-            # Initialize crypto wallet
+            # Convert WalletConfig to dictionary before passing to CryptoWallet
             self.wallet = CryptoWallet(
-                config=self.config.wallet,
+                config=asdict(self.config.wallet),
                 privacy_manager=self.privacy_manager
             )
             await self.wallet.initialize()
             
-            # Initialize federated learning client (optional)
+            # Convert FederatedLearningConfig to dictionary before passing to VehicleFLClient
             if self.config.federated_learning.enabled:
                 self.fl_client = VehicleFLClient(
-                    config=self.config.federated_learning,
+                    config=asdict(self.config.federated_learning),
                     privacy_manager=self.privacy_manager
                 )
                 await self.fl_client.initialize()
