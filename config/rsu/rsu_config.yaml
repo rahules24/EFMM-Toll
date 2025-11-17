@@ -1,0 +1,50 @@
+# Centralized RSU Configuration
+service:
+  name: efmm-rsu-edge
+  host: 0.0.0.0
+  port: 8001
+  log_level: INFO
+
+sensors:
+  enabled:
+    camera: true
+    lidar: false
+    radar: false
+    loop_detector: true
+  camera:
+    device: /dev/video0
+    resolution: 1280x720
+    fps: 15
+  lidar:
+    device: /dev/lidar0
+    enabled: false
+
+fusion:
+  engine: pytorch
+  model_path: ./models/fusion_model.pt
+  confidence_threshold: 0.8
+  batch_interval_seconds: 1.0
+
+token:
+  token_type: ephemeral
+  default_duration_seconds: 300
+  refresh_before_seconds: 30
+
+payment:
+  zk_proof_enabled: true
+  payment_timeout_seconds: 30
+
+audit:
+  audit_api_host: audit-ledger
+  audit_api_port: 8004
+
+fl_client:
+  enabled: true
+  participant_id: rsu-001
+  heartbeat_interval_seconds: 30
+
+metrics:
+  prometheus_port: 8001
+  metrics_path: /metrics
+
+aggregation_server_url: http://localhost:5000

@@ -48,16 +48,40 @@ class AggregatorConfig:
     @classmethod
     def from_yaml(cls, config_path: str) -> 'AggregatorConfig':
         """Load configuration from YAML file"""
-        # TODO: Implement YAML loading (requires pyyaml package)
-        # if os.path.exists(config_path):
-        #     with open(config_path, 'r') as file:
-        #         config_data = yaml.safe_load(file)
-        #         return cls(**config_data)
-        # else:
-        #     return cls()
-        
-        # For now, return default configuration
-        return cls()
+        import yaml
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as file:
+                config_data = yaml.safe_load(file)
+                # Flatten the nested structure
+                service = config_data.get('service', {})
+                fl = config_data.get('federated_learning', {})
+                privacy = config_data.get('privacy', {})
+                model = config_data.get('model', {})
+                participants = config_data.get('participants', {})
+                storage = config_data.get('storage', {})
+                
+                return cls(
+                    service_name=service.get('name', 'efmm-aggregator'),
+                    host=service.get('host', 'localhost'),
+                    port=service.get('port', 8003),
+                    log_level=service.get('log_level', 'INFO'),
+                    fl_rounds_max=fl.get('rounds_max', 100),
+                    fl_participants_min=fl.get('participants_min', 3),
+                    fl_round_timeout=fl.get('round_timeout', 300),
+                    aggregation_strategy=fl.get('aggregation_strategy', 'fedavg'),
+                    differential_privacy_epsilon=privacy.get('differential_privacy_epsilon', 1.0),
+                    differential_privacy_delta=privacy.get('differential_privacy_delta', 1e-5),
+                    secure_aggregation_enabled=privacy.get('secure_aggregation_enabled', True),
+                    model_repository_path=model.get('repository_path', './models'),
+                    model_versions_to_keep=model.get('versions_to_keep', 10),
+                    model_validation_threshold=model.get('validation_threshold', 0.85),
+                    participant_timeout_minutes=participants.get('timeout_minutes', 10),
+                    heartbeat_interval=participants.get('heartbeat_interval_seconds', 30),
+                    database_path=storage.get('database_path', './aggregator.db'),
+                    audit_log_path=storage.get('audit_log_path', './audit')
+                )
+        else:
+            return cls()
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert configuration to dictionary"""

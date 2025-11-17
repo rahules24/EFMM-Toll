@@ -1,0 +1,28 @@
+# Optimized Dockerfile for efmm-base
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies in a single layer
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements.txt for shared dependencies
+COPY requirements.txt .
+
+# Pre-build wheels for large dependencies
+RUN pip wheel --no-cache-dir -r requirements.txt -w /wheels
+
+# Install Python dependencies using pre-built wheels
+RUN pip install --no-cache-dir --find-links=/wheels -r requirements.txt && rm -rf /wheels
+
+# Set Python path
+ENV PYTHONPATH=/app
+
+# Reduce image size by cleaning up temporary files
+RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Create shared base image
+CMD ["echo", "Base image for EFMM-Toll system"]

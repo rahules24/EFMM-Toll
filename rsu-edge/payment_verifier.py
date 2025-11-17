@@ -21,6 +21,7 @@ import secrets
 
 from token_orchestrator import EphemeralToken
 from audit_buffer import AuditBuffer
+from shared.attestation import TEEAttestation
 
 logger = logging.getLogger(__name__)
 
@@ -47,20 +48,6 @@ class PaymentVerificationResult:
     error_message: Optional[str]
     tee_attestation: Optional[Dict[str, Any]]
     recommended_action: str  # 'approve', 'reject', 'investigate'
-
-
-@dataclass
-class TEEAttestation:
-    """TEE-generated attestation for payment verification"""
-    attestation_id: str
-    rsu_id: str
-    ephemeral_token_id: str
-    payment_proof_id: str
-    verification_result: bool
-    amount: float
-    timestamp: datetime
-    tee_signature: bytes
-    sealed_evidence: Optional[bytes]  # Encrypted evidence for disputes
 
 
 class ZKProofVerifier:

@@ -1,0 +1,33 @@
+# Centralized Audit Ledger Configuration
+service:
+  name: efmm-audit-ledger
+  host: 0.0.0.0
+  port: 8004
+  log_level: INFO
+
+ledger:
+  node_id: audit-node-001
+  block_size: 10
+  block_interval: 30
+  sync_interval: 60
+  peers: []
+  consensus_algorithm: proof_of_authority
+
+storage:
+  blockchain_path: ./blockchain
+  backup_interval: 3600
+  retention_days: 365
+
+security:
+  encryption_enabled: true
+  digital_signatures_enabled: true
+  audit_verification_enabled: true
+
+api:
+  enabled: true
+  host: 0.0.0.0
+  port: 8004
+
+metrics:
+  prometheus_port: 8004
+  metrics_path: /metrics

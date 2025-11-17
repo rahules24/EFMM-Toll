@@ -1,0 +1,33 @@
+# Centralized Vehicle OBU Configuration
+service:
+  name: efmm-vehicle-obu
+  host: 0.0.0.0
+  port: 8002
+  log_level: INFO
+
+v2x:
+  protocol: dsrc
+  v2x_interface: wlan0
+  heartbeat_interval_seconds: 30
+
+wallet:
+  zk_proof_curves: secp256k1
+  default_balance: 100.0
+  auto_topup: false
+
+privacy:
+  pseudonym_rotation_seconds: 3600
+  location_anonymization_radius_m: 100
+
+audit:
+  audit_api_host: audit-ledger
+  audit_api_port: 8004
+
+fl_client:
+  enabled: true
+  participant_id_prefix: vehicle
+  max_concurrent_updates: 1
+
+metrics:
+  prometheus_port: 8002
+  metrics_path: /metrics

@@ -1,0 +1,21 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "EFMM Overview",
+    "timezone": "browser",
+    "panels": [
+      {
+        "type": "text",
+        "title": "Status",
+        "gridPos": {"x": 0, "y": 0, "w": 24, "h": 3},
+        "options": {
+          "content": "# EFMM System\n- RSU Edge: http://localhost:8001\n- Vehicle OBU: http://localhost:8002\n- Aggregator: http://localhost:8003\n- Audit Ledger: http://localhost:8004",
+          "mode": "markdown"
+        }
+      }
+    ],
+    "schemaVersion": 27,
+    "version": 1
+  },
+  "overwrite": true
+}

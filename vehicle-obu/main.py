@@ -6,12 +6,16 @@ This module orchestrates all vehicle OBU components including V2X communication,
 token management, payment wallet, and optional federated learning participation.
 """
 
+import sys
+from pathlib import Path
 import asyncio
 import logging
 import argparse
 import yaml
-from pathlib import Path
 from typing import Dict, Any
+
+# Add the project root to the Python path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from v2x_client import V2XClient
 from token_holder import TokenHolder

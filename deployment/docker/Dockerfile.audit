@@ -1,4 +1,4 @@
-# Audit Ledger Dockerfile
+# Dockerfile for Audit Ledger
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -7,29 +7,23 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
-    libffi-dev \
-    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
+# Copy requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy source code
 COPY audit-ledger/ ./audit-ledger/
 COPY shared/ ./shared/
 
 # Set Python path
 ENV PYTHONPATH=/app
 
-# Create directories for data and logs
-RUN mkdir -p /app/data /app/logs /app/config /app/blockchain
+# Create directories
+RUN mkdir -p /app/data /app/blockchain
 
-# Set up non-root user
-RUN useradd -m -u 1000 efmm && chown -R efmm:efmm /app
-USER efmm
-
-# Expose service port
+# Expose port
 EXPOSE 8004
 
 # Health check
@@ -37,4 +31,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:8004/health')" || exit 1
 
 # Run the application
-CMD ["python", "-m", "audit-ledger.main"]
+CMD ["python", "audit-ledger/main.py"]

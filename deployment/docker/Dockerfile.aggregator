@@ -1,4 +1,4 @@
-# Federated Aggregator Dockerfile
+# Dockerfile for Aggregator Service
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -7,29 +7,23 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
-    libffi-dev \
-    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
+# Copy requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy source code
 COPY aggregator/ ./aggregator/
 COPY shared/ ./shared/
 
 # Set Python path
 ENV PYTHONPATH=/app
 
-# Create directories for data and logs
-RUN mkdir -p /app/data /app/logs /app/config /app/models
+# Create directories
+RUN mkdir -p /app/data /app/models
 
-# Set up non-root user
-RUN useradd -m -u 1000 efmm && chown -R efmm:efmm /app
-USER efmm
-
-# Expose service port
+# Expose port
 EXPOSE 8003
 
 # Health check
@@ -37,4 +31,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:8003/health')" || exit 1
 
 # Run the application
-CMD ["python", "-m", "aggregator.main"]
+CMD ["python", "aggregator/main.py"]

@@ -10,14 +10,9 @@ from typing import Dict, Any, List
 @dataclass
 class V2XConfig:
     """V2X communication configuration"""
-    protocol: str = "DSRC"  # DSRC or C-V2X
-    channel: int = 178
-    tx_power: int = 20
-    capabilities: List[str] = field(default_factory=lambda: ["toll_payment"])
-    discovery_interval_seconds: int = 10
-    handshake_timeout_seconds: int = 30
-    pseudonym_rotation_minutes: int = 5
-    discovery: Dict[str, Any] = field(default_factory=dict)
+    protocol: str = "dsrc"
+    v2x_interface: str = "wlan0"
+    heartbeat_interval_seconds: int = 30
 
 
 @dataclass
@@ -30,24 +25,24 @@ class TokenConfig:
 @dataclass
 class WalletConfig:
     """Crypto wallet configuration"""
-    initial_balance: float = 1000.0
-    payment_methods: List[str] = field(default_factory=lambda: ["account_balance"])
+    zk_proof_curves: str = "secp256k1"
+    default_balance: float = 100.0
+    auto_topup: bool = False
 
 
 @dataclass
 class PrivacyConfig:
     """Privacy protection configuration"""
-    privacy_level: str = "high"  # low, medium, high
-    pseudonym_rotation: bool = True
-    differential_privacy: bool = True
+    pseudonym_rotation_seconds: int = 3600
+    location_anonymization_radius_m: int = 100
 
 
 @dataclass
 class FederatedLearningConfig:
     """Federated learning configuration"""
-    enabled: bool = False
-    server_url: str = ""
-    privacy_budget: float = 1.0
+    enabled: bool = True
+    participant_id_prefix: str = "vehicle"
+    max_concurrent_updates: int = 1
 
 
 @dataclass
@@ -71,5 +66,5 @@ class OBUConfig:
             tokens=TokenConfig(**config_dict.get('tokens', {})),
             wallet=WalletConfig(**config_dict.get('wallet', {})),
             privacy=PrivacyConfig(**config_dict.get('privacy', {})),
-            federated_learning=FederatedLearningConfig(**config_dict.get('federated_learning', {}))
+            federated_learning=FederatedLearningConfig(**config_dict.get('fl_client', {}))
         )

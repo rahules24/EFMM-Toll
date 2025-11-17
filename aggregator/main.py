@@ -10,18 +10,22 @@ Main entry point for the aggregation service that handles:
 - Training round coordination
 """
 
+import sys
+from pathlib import Path
 import asyncio
 import logging
 import argparse
 import yaml
-from pathlib import Path
 from typing import Dict, Any
+
+# Add the project root to the Python path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from aggregation_server import AggregationServer
 from model_repository import ModelRepository
 from privacy_engine import PrivacyEngine
 from participant_registry import ParticipantRegistry
-from config.aggregator_config import AggregatorConfig
+# Removed the import of AggregatorConfig as it's no longer needed
 
 # Configure logging
 logging.basicConfig(
@@ -42,7 +46,7 @@ class FederatedAggregatorService:
     - Participant lifecycle management
     """
     
-    def __init__(self, config: AggregatorConfig):
+    def __init__(self, config):
         self.config = config
         self.running = False
         
@@ -62,20 +66,20 @@ class FederatedAggregatorService:
         
         try:
             # Initialize model repository first
-            self.model_repository = ModelRepository(self.config.model_repository)
+            self.model_repository = ModelRepository(self.config['model'])
             await self.model_repository.initialize()
             
             # Initialize privacy engine
-            self.privacy_engine = PrivacyEngine(self.config.privacy)
+            self.privacy_engine = PrivacyEngine(self.config['privacy'])
             await self.privacy_engine.initialize()
             
             # Initialize participant registry
-            self.participant_registry = ParticipantRegistry(self.config.participants)
+            self.participant_registry = ParticipantRegistry(self.config['participants'])
             await self.participant_registry.initialize()
             
             # Initialize aggregation server
             self.aggregation_server = AggregationServer(
-                config=self.config.aggregation,
+                config=self.config['aggregation'],
                 model_repository=self.model_repository,
                 privacy_engine=self.privacy_engine,
                 participant_registry=self.participant_registry
@@ -155,7 +159,7 @@ class FederatedAggregatorService:
                     await self._execute_training_round()
                 
                 # Wait between round checks
-                await asyncio.sleep(self.config.aggregation.round_check_interval_seconds)
+                await asyncio.sleep(self.config['aggregation']['round_check_interval_seconds'])
                 
             except Exception as e:
                 logger.error(f"Error in training coordinator: {e}")
@@ -168,7 +172,7 @@ class FederatedAggregatorService:
         
         # Check minimum participants
         active_participants = await self.participant_registry.get_active_participants()
-        min_participants = self.config.aggregation.min_participants_per_round
+        min_participants = self.config['aggregation']['min_participants_per_round']
         
         if len(active_participants) < min_participants:
             logger.debug(f"Insufficient participants: {len(active_participants)}/{min_participants}")
@@ -176,7 +180,7 @@ class FederatedAggregatorService:
         
         # Check time since last round
         if hasattr(self, 'last_round_time'):
-            min_interval = self.config.aggregation.min_round_interval_seconds
+            min_interval = self.config['aggregation']['min_round_interval_seconds']
             time_since_last = (asyncio.get_event_loop().time() - self.last_round_time)
             if time_since_last < min_interval:
                 return False
@@ -226,18 +230,17 @@ class FederatedAggregatorService:
         }
 
 
-def load_config(config_path: str) -> AggregatorConfig:
+def load_config(config_path: str):
     """Load configuration from YAML file"""
     with open(config_path, 'r') as f:
-        config_dict = yaml.safe_load(f)
-    return AggregatorConfig.from_dict(config_dict)
+        return yaml.safe_load(f)
 
 
 async def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(description='Federated Learning Aggregator Service')
     parser.add_argument('--config', 
-                       default='config/aggregator_config.yaml',
+                       default='config/aggregator/aggregator_config.yaml',
                        help='Configuration file path')
     parser.add_argument('--enable-dashboard',
                        action='store_true',
@@ -259,8 +262,8 @@ async def main():
     
     # Enable dashboard if requested
     if args.enable_dashboard:
-        config.dashboard.enabled = True
-        config.dashboard.port = args.port
+        config['dashboard']['enabled'] = True
+        config['dashboard']['port'] = args.port
     
     # Create and run aggregator service
     aggregator_service = FederatedAggregatorService(config)

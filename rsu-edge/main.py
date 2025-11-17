@@ -10,8 +10,13 @@ import asyncio
 import logging
 import argparse
 import yaml
+import sys
 from pathlib import Path
 from typing import Dict, Any
+from dataclasses import asdict
+
+# Add the project root to the Python path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from sensor_adapters import SensorManager
 from fusion_engine import MultiModalFusionEngine
@@ -26,6 +31,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+logging.getLogger().setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -63,41 +69,43 @@ class RSUEdgeService:
         
         try:
             # Initialize audit buffer first (required by other components)
-            self.audit_buffer = AuditBuffer(self.config.audit)
+            # Convert dataclass configurations to plain dictionaries for components
+            self.audit_buffer = AuditBuffer(asdict(self.config.audit))
             await self.audit_buffer.initialize()
             
             # Initialize sensor manager
             self.sensor_manager = SensorManager(
-                config=self.config.sensors,
+                config=asdict(self.config.sensors),
                 data_queue=self.sensor_data_queue
             )
             await self.sensor_manager.initialize()
             
             # Initialize fusion engine
             self.fusion_engine = MultiModalFusionEngine(
-                config=self.config.fusion,
+                config=asdict(self.config.fusion),
                 sensor_queue=self.sensor_data_queue
             )
             await self.fusion_engine.initialize()
             
             # Initialize federated learning client
+            logger.debug(f"FLClient Config: {asdict(self.config.federated_learning)}")
             self.fl_client = FederatedLearningClient(
-                config=self.config.federated_learning,
+                config=asdict(self.config.federated_learning),
                 fusion_engine=self.fusion_engine
             )
             await self.fl_client.initialize()
             
             # Initialize token orchestrator
             self.token_orchestrator = TokenOrchestrator(
-                config=self.config.tokens,
+                config=asdict(self.config.tokens),
                 event_queue=self.token_events_queue
             )
             await self.token_orchestrator.initialize()
             
             # Initialize payment verifier with TEE support
             self.payment_verifier = PaymentVerifier(
-                config=self.config.payments,
-                tee_config=self.config.tee,
+                config=asdict(self.config.payments),
+                tee_config=asdict(self.config.tee),
                 event_queue=self.payment_events_queue,
                 audit_buffer=self.audit_buffer
             )

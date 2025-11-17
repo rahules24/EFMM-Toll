@@ -5,6 +5,12 @@ Blockchain-based audit trail for EFMM-Toll system
 
 import asyncio
 import logging
+import sys
+from pathlib import Path
+
+# Add the project root to the Python path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
 from typing import Dict, Any
 from ledger_node import LedgerNode
 from audit_config import AuditLedgerConfig

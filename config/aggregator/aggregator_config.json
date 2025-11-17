@@ -1,0 +1,32 @@
+{
+  "service": {
+    "name": "efmm-aggregator",
+    "host": "0.0.0.0",
+    "port": 8003,
+    "log_level": "INFO"
+  },
+  "federated_learning": {
+    "rounds_max": 100,
+    "participants_min": 3,
+    "round_timeout": 300,
+    "aggregation_strategy": "fedavg"
+  },
+  "privacy": {
+    "differential_privacy_epsilon": 1.0,
+    "differential_privacy_delta": 1e-5,
+    "secure_aggregation_enabled": true
+  },
+  "model": {
+    "repository_path": "./models",
+    "versions_to_keep": 10,
+    "validation_threshold": 0.85
+  },
+  "participants": {
+    "timeout_minutes": 10,
+    "heartbeat_interval_seconds": 30
+  },
+  "storage": {
+    "database_path": "./aggregator.db",
+    "audit_log_path": "./audit"
+  }
+}

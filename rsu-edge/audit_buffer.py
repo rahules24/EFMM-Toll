@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 import os
 from pathlib import Path
 
-from payment_verifier import TEEAttestation
+from shared.attestation import TEEAttestation
 
 logger = logging.getLogger(__name__)
 
